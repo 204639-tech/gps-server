@@ -9,20 +9,17 @@ app.use(express.json());
 // Memoria simple para guardar la última coordenada recibida
 let lastCoord = null;
 
-// Ruta base: prueba de vida
+// ✅ Ruta base: prueba de vida
 app.get('/', (req, res) => {
   res.send('🚀 Servidor GPS funcionando correctamente');
 });
 
-/**
- * Ruta receptora de coordenadas:
- * Acepta:
- *   GET  /gps?lat=-13.5&lon=-71.9
- *   GET  /gps?lat=-13.5&lng=-71.9
- *   POST /gps  { "lat": -13.5, "lon": -71.9 }
- */
+// ✅ Ruta receptora de coordenadas
+// Acepta:
+//   GET  /gps?lat=-13.5&lon=-71.9
+//   GET  /gps?lat=-13.5&lng=-71.9
+//   POST /gps  { "lat": -13.5, "lon": -71.9 }
 app.all('/gps', (req, res) => {
-  // Tomamos de query o body (GET o POST)
   const q = req.method === 'GET' ? req.query : req.body;
 
   const latRaw = q.lat ?? q.latitude;
@@ -51,7 +48,7 @@ app.all('/gps', (req, res) => {
   return res.json({ ok: true, saved: lastCoord });
 });
 
-// Ruta para consultar la última coordenada registrada
+// ✅ Ruta para consultar la última coordenada registrada
 app.get('/last', (req, res) => {
   if (!lastCoord) {
     return res.json({ ok: true, last: null, note: 'Aún no se ha recibido ninguna coordenada.' });
@@ -59,7 +56,7 @@ app.get('/last', (req, res) => {
   return res.json({ ok: true, last: lastCoord });
 });
 
-// Iniciar servidor
+// ✅ Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
