@@ -5,6 +5,8 @@ const PORT = process.env.PORT || 8080;
 
 // Para JSON si luego enviamos POST
 app.use(express.json());
+app.use(express.static('public'));
+
 
 // Memoria simple para guardar la última coordenada recibida
 let lastCoord = null;
