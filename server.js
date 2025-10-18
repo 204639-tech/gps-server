@@ -58,6 +58,18 @@ app.get('/last', (req, res) => {
   return res.json({ ok: true, last: lastCoord });
 });
 
+// 🧪 Simulador de movimiento (modo demo)
+setInterval(() => {
+  if (!lastCoord) return;
+
+  // Mueve ligeramente las coordenadas
+  lastCoord.lat += (Math.random() - 0.5) * 0.0005;
+  lastCoord.lon += (Math.random() - 0.5) * 0.0005;
+  lastCoord.receivedAt = new Date().toISOString();
+
+  console.log(`🛰️ Coordenada simulada: ${lastCoord.lat}, ${lastCoord.lon}`);
+}, 5000); // cada 5 segundos
+
 // ✅ Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
