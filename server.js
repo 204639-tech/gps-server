@@ -1,38 +1,25 @@
-import express from 'express';
-
+const express = require('express');
+const cors = require('cors');
 const app = express();
+
 const PORT = process.env.PORT || 8080;
 
-// Para JSON si luego enviamos POST
+app.use(cors());
 app.use(express.json());
 
-// Memoria simple para guardar la última coordenada recibida
+// Memoria simple (última coord)
 let lastCoord = null;
 
-// ✅ Ruta base: prueba de vida
-app.get('/', (req, res) => {
-  res.send('🚀 Servidor GPS funcionando correctamente');
-});
+// 👉 Servir la carpeta public (frontend)
+app.use(express.static('public'));
 
-// ✅ Ruta receptora de coordenadas
-// Acepta:
-//   GET  /gps?lat=-13.5&lon=-71.9
-//   GET  /gps?lat=-13.5&lng=-71.9
-//   POST /gps  { "lat": -13.5, "lon": -71.9 }
+// Ruta para recibir coords (GET o POST)
 app.all('/gps', (req, res) => {
-  const q = req.method === 'GET' ? req.query : req.body;
+  const lat = parseFloat(req.query.lat ?? req.body?.lat);
+  const lon = parseFloat(req.query.lon ?? req.body?.lon);
 
-  const latRaw = q.lat ?? q.latitude;
-  const lonRaw = q.lon ?? q.lng ?? q.longitude;
-
-  const lat = parseFloat(latRaw);
-  const lon = parseFloat(lonRaw);
-
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    return res.status(400).json({
-      ok: false,
-      error: 'Parámetros inválidos. Usa lat y lon (o lng). Ej: /gps?lat=-13.5&lon=-71.9'
-    });
+  if (Number.isNaN(lat) || Number.isNaN(lon)) {
+    return res.status(400).json({ ok: false, error: 'lat/lon inválidos' });
   }
 
   lastCoord = {
@@ -43,20 +30,16 @@ app.all('/gps', (req, res) => {
     via: req.method
   };
 
-  console.log(`📡 Coordenadas recibidas -> lat=${lat}, lon=${lon} (${lastCoord.via})`);
-
+  console.log(`📍 coordenadas -> lat=${lat}, lon=${lon} (${lastCoord.via})`);
   return res.json({ ok: true, saved: lastCoord });
 });
 
-// ✅ Ruta para consultar la última coordenada registrada
+// Última coordenada
 app.get('/last', (req, res) => {
   if (!lastCoord) {
-    return res.json({ ok: true, last: null, note: 'Aún no se ha recibido ninguna coordenada.' });
+    return res.json({ ok: true, last: null, note: 'Aún no hay coordenadas.' });
   }
   return res.json({ ok: true, last: lastCoord });
 });
 
-// ✅ Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Servidor corriendo en ${PORT}`));
