@@ -1,5 +1,5 @@
-// Si sirves desde el mismo servidor, usa ruta relativa:
-const API_BASE = ''; // mismo dominio (Railway o local)
+// Dirección base (Railway usa el mismo dominio)
+const API_BASE = '';
 const LAST_URL = `${API_BASE}/last`;
 
 let map, marker, pathLine;
@@ -8,22 +8,21 @@ let firstFix = true;
 
 function initMap(lat, lon) {
   const center = [lat, lon];
-  map = L.map('map').setView(center, 14);
+  map = L.map('map').setView(center, 15);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap'
+    attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  marker = L.marker(center).addTo(map).bindPopup('Posición inicial');
-  pathLine = L.polyline([center]).addTo(map);
+  marker = L.marker(center).addTo(map).bindPopup('Iniciando seguimiento...');
+  pathLine = L.polyline([center], { color: 'blue', weight: 4 }).addTo(map);
 }
 
 async function fetchLast() {
   try {
     const res = await fetch(`${LAST_URL}?nocache=${Date.now()}`);
     const data = await res.json();
-
     if (!data.ok || !data.last) return;
 
     const { lat, lon, receivedAt } = data.last;
@@ -31,22 +30,29 @@ async function fetchLast() {
 
     if (!map) {
       initMap(lat, lon);
+      console.log('🗺️ Mapa inicializado');
+      return;
     }
 
-    // Actualiza marcador y trazo
-    marker.setLatLng(latlng).setPopupContent(`Lat: ${lat}<br>Lon: ${lon}<br>${new Date(receivedAt).toLocaleString()}`);
-    pathCoords.push(latlng);
-    pathLine.setLatLngs(pathCoords);
+    // Actualiza posición solo si cambió
+    const currentPos = marker.getLatLng();
+    if (currentPos.lat !== lat || currentPos.lng !== lon) {
+      marker.setLatLng(latlng)
+        .setPopupContent(`Lat: ${lat}<br>Lon: ${lon}<br>${new Date(receivedAt).toLocaleTimeString()}`);
+      pathCoords.push(latlng);
+      pathLine.setLatLngs(pathCoords);
 
-    if (firstFix) {
-      map.flyTo(latlng, 16);
-      firstFix = false;
+      console.log(`📍 Nueva coordenada -> lat=${lat}, lon=${lon}`);
+      if (firstFix) {
+        map.flyTo(latlng, 16);
+        firstFix = false;
+      }
     }
   } catch (e) {
-    console.error('Error al obtener /last:', e);
+    console.error('Error obteniendo /last:', e);
   }
 }
 
-// Actualiza cada 3 segundos
+// Consulta cada 3 segundos
 setInterval(fetchLast, 3000);
 fetchLast();
